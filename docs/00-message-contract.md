@@ -10,8 +10,54 @@
 ## 설계 원칙
 
 - **v0는 WebSocket 직결**로 가되, **메시지 구조는 처음부터 ROS2로 옮기기 쉽게** 설계한다.
-- 좌표는 전부 **로컬 좌표(미터)**. 위경도는 v1 후반 또는 v2에서 변환 계층을 얹는다.
-- 각도는 전부 **라디안(rad)**.
+- **계약 좌표계는 하나. 변환은 가장자리에서만 한다.**
+  브리지를 지나다니는 데이터는 항상 이 문서의 좌표계·단위를 따른다.
+  UE5나 웹이 자기 사정에 맞게 바꾸는 것은 각자의 경계 안에서만 한다.
+- 관련 결정: [ADR 0002 — 좌표계](decisions/0002-coordinate-frame.md),
+  [ADR 0003 — WebSocket 단일화](decisions/0003-websocket-only.md)
+
+---
+
+## 좌표계 규약
+
+**ROS 표준 ENU (오른손 좌표계, REP-103)** 를 따른다.
+
+```
+        y (북)
+        ↑
+        │
+        └───→ x (동)        z = 위 (하늘 방향)
+
+   yaw = 0     → 동쪽(+x)
+   yaw = +π/2  → 북쪽(+y)   ※ 반시계 방향이 양수
+```
+
+| 항목 | 규약 |
+|---|---|
+| 원점 | 맵의 로컬 원점 (위경도 아님) |
+| 길이 | **미터(m)** |
+| 각도 | **라디안(rad)**, 범위 `-π ~ +π` |
+| yaw | 0 = 동쪽(+x), **반시계 양수** |
+| 짐벌 `pan`/`tilt` | **차체 기준 상대각.** 월드 기준이 필요하면 `yaw + pan`으로 계산 |
+
+### 변환은 어디서 하나
+
+| 경계 | 하는 일 |
+|---|---|
+| 웹 렌더링 | `worldToScreen()` / `screenToWorld()` — canvas는 y가 아래로 증가하므로 여기서만 뒤집는다 |
+| 웹 표시 | 라디안 → 도(°). 사람이 읽는 값만 변환하고, 저장·전송은 라디안 유지 |
+| UE5 어댑터 | 왼손 좌표계·cm ↔ 계약 좌표계·m 변환 ([2]단계) |
+
+---
+
+## JSON 공통 규약
+
+- 메시지 종류는 최상위 **`type`** 필드로 구분한다. (WebSocket은 통로가 하나라 표식이 필요)
+- 필드명은 **`snake_case`** — ROS2 메시지 필드 관습에 맞춘다. 중간에서 자동 변환하지 않는다.
+- 값은 **중첩해서 묶는다** (`position: {x, y, z}`) — ROS2 `geometry_msgs/Point` 모양 그대로.
+- **`timestamp`** 는 Unix 시각(초, 소수점 포함). 예: `1753274400.123`
+- **`vehicle_id`** 를 항상 포함한다. v1은 한 대뿐이지만, v2/v3의 다중 플랫폼에서
+  계약이 깨지지 않도록 처음부터 자리를 잡아둔다.
 
 ---
 
@@ -19,25 +65,27 @@
 
 ### VehicleState
 
-```
-VehicleState
-  timestamp
-  position   : x, y, z            (로컬 좌표, m)
-  attitude   : yaw, pitch, roll   (rad)
-  velocity   : linear, angular
-  gimbal     : pan, tilt          (rad)
-  mode       : IDLE | AUTO | EMERGENCY_STOP | LINK_LOST
-```
-
-### Heartbeat
-
-```
-Heartbeat
-  timestamp
+```json
+{
+  "type": "VehicleState",
+  "vehicle_id": "uxv-01",
+  "timestamp": 1753274400.123,
+  "position": { "x": 10.5, "y": -3.2, "z": 0.0 },
+  "attitude": { "yaw": 1.5708, "pitch": 0.0, "roll": 0.0 },
+  "velocity": { "linear": 2.5, "angular": 0.1 },
+  "gimbal":   { "pan": 0.3, "tilt": -0.2 },
+  "mode": "AUTO"
+}
 ```
 
-하트비트가 일정 시간 끊기면 관제기는 **통신두절**로 표시하고, 차량은 **안전 정지**로 전환한다.
-타임아웃 값은 구현 시점에 정하고, 정했으면 [decisions/](decisions/)에 ADR로 남긴다.
+| 필드 | 단위 | 비고 |
+|---|---|---|
+| `position` | m | 로컬 ENU |
+| `attitude` | rad | `-π ~ +π` |
+| `velocity.linear` | m/s | |
+| `velocity.angular` | rad/s | |
+| `gimbal` | rad | **차체 기준** |
+| `mode` | — | `IDLE` \| `AUTO` \| `EMERGENCY_STOP` \| `LINK_LOST` |
 
 ---
 
@@ -45,27 +93,74 @@ Heartbeat
 
 ### SetWaypoints
 
-```
-SetWaypoints
-  points : [(x, y), ...]
+```json
+{
+  "type": "SetWaypoints",
+  "vehicle_id": "uxv-01",
+  "points": [ { "x": 0, "y": 0 }, { "x": 10, "y": 5 } ]
+}
 ```
 
 ### SetGimbalTarget
 
-```
-SetGimbalTarget
-  type   : POINT | ENTITY
-  value  : (x, y, z) 또는 entity_id
+```json
+{
+  "type": "SetGimbalTarget",
+  "vehicle_id": "uxv-01",
+  "target_type": "POINT",
+  "value": { "x": 5, "y": 5, "z": 0 }
+}
 ```
 
-- `POINT` — L0 지점 지향. 지도에서 좌표를 클릭.
-- `ENTITY` — L1 표적 지정 추적. 화면 속 개체를 클릭. **v1은 여기까지.**
+- `target_type` — `POINT`(L0 지점 지향) \| `ENTITY`(L1 표적 추적). **v1은 L1까지.**
+- `ENTITY`일 때 `value`는 `{"entity_id": "..."}`.
+- 하위 필드명이 `type`이 아니라 **`target_type`** 인 이유: 최상위 `type`과 이름이 겹치기 때문.
 
 ### EmergencyStop
 
+```json
+{ "type": "EmergencyStop", "vehicle_id": "uxv-01" }
 ```
-EmergencyStop
+
+---
+
+## 연결
+
+**브리지만 서버다.** 차량과 관제기가 브리지에 접속한다.
+(주소가 고정된 쪽이 서버가 된다. 차량은 이동체라 주소가 바뀔 수 있고, v2에서 대수가 늘어도
+브리지 설정을 고칠 필요가 없다.)
+
 ```
+   UE5 / 스텁 ──접속──▶  ┌─────────────┐
+                         │   브리지     │  :8000
+   웹 (브라우저) ──접속──▶ └─────────────┘
+```
+
+| 대상 | 주소 |
+|---|---|
+| 차량 (스텁 / UE5) | `ws://localhost:8000/ws/vehicle` |
+| 관제기 (웹) | `ws://localhost:8000/ws/operator` |
+| 웹 개발 서버 | `http://localhost:5173` (Vite 기본값) |
+
+접속 경로를 둘로 나눈 이유: 브리지가 **경로만 보고** 차량인지 관제기인지 구분할 수 있다.
+
+---
+
+## 하트비트
+
+**별도 `Heartbeat` 메시지를 두지 않는다.** `VehicleState`가 10Hz로 계속 오므로,
+그것이 도착한다는 사실 자체가 생존 신호다. 메시지 종류가 줄고,
+"상태는 오는데 하트비트만 끊기는" 모순 상황도 생기지 않는다.
+
+| 방향 | 생존 신호 | 타임아웃 | 끊기면 |
+|---|---|---|---|
+| 차량 → 관제기 | `VehicleState` (10Hz) | **1초** | 화면에 통신두절 표시 |
+| 관제기 → 차량 | 관제기 하트비트 필요 | **1초** | 차량이 `LINK_LOST` 로 전환, 안전 정지 |
+
+타임아웃 판정은 **수신 측의 도착 시각** 기준으로 한다. 메시지 안의 `timestamp`를 쓰면
+양쪽 시계가 어긋났을 때 오판한다.
+
+> 관제기 → 차량 방향의 하트비트 메시지 형식은 스텁·브리지를 만들면서 정하고 여기 추가한다.
 
 ---
 
@@ -75,4 +170,11 @@ EmergencyStop
 
 | 날짜 | 변경 | 이유 |
 |---|---|---|
-| — | 초안 작성 | 로드맵 7장에서 분리 |
+| 2026-07-23 | 초안 작성 | 로드맵 7장에서 분리 |
+| 2026-07-24 | 좌표계 규약 명시 (ENU) | 축·각도 기준이 없어 부호 버그 위험 → [ADR 0002](decisions/0002-coordinate-frame.md) |
+| 2026-07-24 | 실제 JSON 형식 확정 | 개념만 있고 직렬화 모양이 없었음 |
+| 2026-07-24 | `vehicle_id` 추가 | v2/v3 다중 플랫폼에서 계약이 깨지지 않도록 |
+| 2026-07-24 | `SetGimbalTarget.type` → `target_type` | 최상위 `type`과 이름 충돌 |
+| 2026-07-24 | 짐벌각 기준을 차체 상대각으로 명시 | 실제 하드웨어와 동일. 안정화 동작이 값 변화로 드러남 |
+| 2026-07-24 | `Heartbeat` 메시지 삭제, `VehicleState` 겸용 | 10Hz 스트림 자체가 생존 신호. 중복 제거 |
+| 2026-07-24 | 연결 방향·포트·경로 확정 | 브리지만 서버. 타임아웃 1초 |
