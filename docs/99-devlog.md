@@ -56,15 +56,17 @@
 
 ---
 
-## Day 2 — 2026-07-24 (금) · 약 1.5시간
+## Day 2 — 2026-07-27 (월) · 약 2시간
 
-**한 줄 요약**: 코드 이전에 필요한 계약을 전부 확정했다. 이제 스텁만 쓰면 된다.
+**한 줄 요약**: 계약을 JSON까지 확정하고, 스텁의 원운동(`position`)까지 짰다.
 
-- **한 것** — 개발 환경 설치 확인(Node 24 LTS / Python 3.11.9).
-  메시지 계약을 개념 수준에서 실제 JSON까지 내렸다. ADR 0002·0003 작성.
-- **결정** — 좌표계는 ROS 표준 ENU([0002](decisions/0002-coordinate-frame.md)),
-  전송은 WebSocket 단일([0003](decisions/0003-websocket-only.md)).
-  하트비트는 별도 메시지 없이 `VehicleState` 겸용, 타임아웃 1초.
-- **배운 것** — "전체를 미리 설계할까"의 기준은 자세함이 아니라 **바꿀 때의 비용**이었다.
-  좌표계는 지금, UI 배치는 나중. ws/ros2/rest 다중 전송 아이디어는 보관함으로 보냈다.
-- **다음** — 스텁 퍼블리셔 작성. 목표는 콘솔에 좌표가 찍히는 것까지.
+- **한 것** — 환경 확인(Node 24 LTS / Python 3.11.9). 계약을 개념 수준에서 실제 JSON으로 확정, ADR 0002·0003 작성.
+  `uxv-stub` venv 구성 후 `make_state(t)` 작성 — 시각 기반 원운동으로 `position`까지 나온다.
+- **결정** — 좌표계 ENU([0002](decisions/0002-coordinate-frame.md)),
+  전송 WebSocket 단일([0003](decisions/0003-websocket-only.md)),
+  하트비트는 `VehicleState` 겸용(타임아웃 1초). AI 인라인 자동완성은 `.vscode/settings.json`으로 껐다.
+- **막힌 것** — PowerShell 실행 정책이 `Activate.ps1`을 차단. `requirements.txt`에 한글 주석을 넣었더니
+  pip이 cp949로 읽어 `UnicodeDecodeError` — 주석은 README로 옮기고 파일은 ASCII만 남겼다.
+- **배운 것** — 설계 범위의 기준은 자세함이 아니라 **바꿀 때의 비용**.
+  위치는 각도가 2π를 넘어도 cos/sin이 감아주지만 `yaw`는 그대로 새어나온다 → 정규화가 필요하다.
+- **다음** — yaw 정규화 → `attitude`·`velocity`·`gimbal` → 10Hz 발행 루프.
