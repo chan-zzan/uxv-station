@@ -1,0 +1,18 @@
+{
+  // 이 저장소는 AI 인라인 자동완성 없이 작성한다.
+  //
+  // 이유: 이 프로젝트의 목적은 "설명할 수 있는가"이고(CLAUDE.md 작업 규칙 4),
+  // 로직을 대신 써주는 도구가 켜져 있으면 그 규칙이 무력화된다.
+  //
+  // Pylance IntelliSense(함수 이름·시그니처 드롭다운)는 끄지 않는다.
+  // 그건 로직 대필이 아니라 문서를 찾아보는 것에 가깝다.
+
+  // 회색 글씨로 미리 뜨는 인라인 제안 자체를 끈다 (제공자 무관, 가장 확실)
+  "editor.inlineSuggest.enabled": false,
+
+  // Copilot 코드 완성 (VS Code 최신 버전은 확장 없이도 내장되어 있다)
+  "github.copilot.enable": { "*": false },
+
+  // "다음에 고칠 곳" 자동 제안
+  "github.copilot.nextEditSuggestions.enabled": false
+}
