@@ -1,3 +1,4 @@
+import json
 import math
 import time
 
@@ -27,8 +28,6 @@ def normalize_angle(rad):
 def calc_angle(t):
     return ANGULAR_VELOCITY * t
 
-
-
 # t초일때의 차량 위치 반환 함수
 def calc_position(t):
     angle = calc_angle(t)
@@ -47,9 +46,9 @@ def calc_yaw(t):
     # 정규화 시킨 값을 반환
     return normalize_angle(yaw)
 
-
 # 차량 상태를 반환하는 함수
-def make_state(t):
+# 순수 함수: 같은 입력을 넣으면 같은 출력이 나오는 함수 + 외부 변수의 상태를 바꾸지 않음.
+def make_state(t, start_time):
 
     (x,y) = calc_position(t)
     yaw = calc_yaw(t)
@@ -57,7 +56,7 @@ def make_state(t):
     return {
         "type": "VehicleState",
         "vehicle_id": VEHICLE_ID,
-        "timestamp": time.time(),
+        "timestamp": start_time + t,
         "position": {"x": x, "y": y, "z": 0.0},        
         "attitude": {"yaw": yaw, "pitch": 0.0, "roll": 0.0},        
         "velocity": {"linear": ANGULAR_VELOCITY * RADIUS, "angular": ANGULAR_VELOCITY},        
@@ -66,8 +65,31 @@ def make_state(t):
     }
 
 
+def publish_loop(send):
 
-print(make_state(0))
-print(make_state(10))
-print(make_state(20))
-print(make_state(30))
+    start_time = time.time() # 시작 시간
+    loop_start_time = time.monotonic() # 루프 시작 시간
+
+    count = 0
+    
+    while True:        
+        current_time = time.monotonic() # 현재 시간        
+        elapsed_time = current_time - loop_start_time # 지나간 시간
+
+        send(json.dumps(make_state(elapsed_time, start_time))) # 해당 시간의 값을 호출
+
+        time.sleep(0.1) # 0.1초 대기
+
+        count += 1
+        if count > 10:
+            break
+
+
+publish_loop(print)
+
+# print(make_state(0, 40))
+# print(make_state(0, 50))
+# print(make_state(10, 40))
+#print(make_state(10))
+#print(make_state(20))
+#print(make_state(30))
