@@ -11,6 +11,8 @@ PERIOD = 40.0 # 1바퀴 회전 주기(초)
 
 ANGULAR_VELOCITY = 2 * math.pi / PERIOD # 각속도 = PERIOD초에 2π 회전
 
+PUBLISH_INTERVAL = 0.1 # 업데이트 주기
+
 
 # 정규화 함수 : 각도를 입력하면 -π ~ π 사이의 값으로 정규화
 def normalize_angle(rad):
@@ -70,19 +72,24 @@ def publish_loop(send):
     start_time = time.time() # 시작 시간
     loop_start_time = time.monotonic() # 루프 시작 시간
 
-    count = 0
+    # 루프를 돈 횟수
+    n = 0
     
     while True:        
-        current_time = time.monotonic() # 현재 시간        
-        elapsed_time = current_time - loop_start_time # 지나간 시간
 
-        send(json.dumps(make_state(elapsed_time, start_time))) # 해당 시간의 값을 호출
+        # 목표 시간
+        target_elapsed = n * PUBLISH_INTERVAL
 
-        time.sleep(0.1) # 0.1초 대기
+        # 루프 목표 시간
+        target_loop_time = loop_start_time + n * PUBLISH_INTERVAL
 
-        count += 1
-        if count > 10:
-            break
+        # 한 틱이 딱 0.1초가 되기 위한 계산 -> 현재 목표 시간에서 실제 현재 시간을 빼주면 됨.
+        time.sleep(max(0, target_loop_time - time.monotonic())) 
+
+        # 해당 시간의 값을 호출
+        send(json.dumps(make_state(target_elapsed, start_time))) 
+
+        n += 1
 
 
 publish_loop(print)
