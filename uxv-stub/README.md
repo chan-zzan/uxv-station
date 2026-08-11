@@ -9,7 +9,7 @@ UE5가 완성되기 전까지 차량 자리를 대신한다.
 
 | | 하는 일 | 상태 |
 |---|---|---|
-| **A** | `VehicleState`를 만들어 자기 콘솔에 출력 | 작업 중 |
+| **A** | `VehicleState`를 만들어 자기 콘솔에 출력 | **완료** |
 | **B** | 같은 값을 브리지(`ws://localhost:8000/ws/vehicle`)로 전송 | 브리지 이후 |
 
 A→B는 다시 쓰기가 아니라 덧붙이기다. `publish_loop`이 출력 함수를 인자로 받으므로,
@@ -52,6 +52,8 @@ py -m venv .venv
 pip install -r requirements.txt
 python stub.py
 ```
+
+**종료는 `Ctrl+C`.** 스텁은 멈추라고 할 때까지 계속 발행한다 — 실제 차량과 같다.
 
 `Activate.ps1`이 실행 정책에 막히면 현재 세션에만 허용한다:
 
