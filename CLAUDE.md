@@ -17,6 +17,7 @@
 | 아키텍처·기술 스택 | `docs/01-architecture.md` |
 | v2~v4 확장 아이디어 (구현 금지) | `docs/02-roadmap.md` |
 | 어떻게 설명하고 어떻게 나눠 맡나 | `docs/03-working-style.md` |
+| 웹 UI 파일 구조·실행 흐름 | `docs/04-web-structure.md` |
 | 왜 그렇게 결정했는가 (ADR) | `docs/decisions/` |
 | 그날그날 뭘 했나 (개발 일지) | `docs/99-devlog.md` |
 
