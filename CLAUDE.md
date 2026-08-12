@@ -16,6 +16,7 @@
 | 메시지 계약 (VehicleState, SetWaypoints …) | `docs/00-message-contract.md` |
 | 아키텍처·기술 스택 | `docs/01-architecture.md` |
 | v2~v4 확장 아이디어 (구현 금지) | `docs/02-roadmap.md` |
+| 어떻게 설명하고 어떻게 나눠 맡나 | `docs/03-working-style.md` |
 | 왜 그렇게 결정했는가 (ADR) | `docs/decisions/` |
 | 그날그날 뭘 했나 (개발 일지) | `docs/99-devlog.md` |
 
@@ -50,3 +51,7 @@
    **`docs/99-devlog.md`에 오늘 기록을 남길지 항상 먼저 물어본다.**
    승인받으면 그때 추가한다. 묻지 않고 쓰지 않고, 물어보는 것 자체를 빠뜨리지 않는다.
    분량은 5~7줄. 길어질 내용은 일지가 아니라 ADR로 보낸다.
+9. **설명 방식** — 사용자는 유니티·C#이 익숙하고 **파이썬·웹은 입문 단계**다.
+   세션을 시작할 때 `docs/03-working-style.md`를 읽고 그 방식을 따른다.
+10. **커밋** — 로직 코드(`feat`) 커밋에는 `Co-Authored-By` 트레일러를 **붙이지 않는다**
+    (규칙 4 귀속). 문서(`docs`) 커밋에만 붙인다. 브랜치를 따지 않고 `main`에 직접 커밋한다.
