@@ -1,19 +1,15 @@
 import { MapCanvas } from './MapCanvas'
-import type { View } from './transform'
 
-// W1 임시 뷰. 1m = 8px, 월드 원점을 화면 (400, 300)에 둔다.
-// 스텁이 반지름 20m 원을 도니까 화면에서 지름 320px짜리 원이 된다.
-// 원점을 캔버스 한가운데로 옮기는 것은 캔버스 크기를 알아야 하므로 나중에.
-const VIEW: View = {
-  scale: 8,
-  origin: { x: 400, y: 300 },
-}
+// 지도 확대율 — 1m = 8px. 스텁이 반지름 20m 원을 도니까 화면에서 지름 320px이 된다.
+// 원점(월드 0,0이 화면 어디인가)은 캔버스 크기를 알아야 해서 MapCanvas가 정한다.
+const MAP_SCALE = 8
 
 function App() {
+
   return (
     <>
       <main className="map-area">
-        <MapCanvas view={VIEW} />
+        <MapCanvas scale={MAP_SCALE} />
       </main>
 
       <aside className="side-panel">
@@ -23,5 +19,7 @@ function App() {
     </>
   )
 }
+
+
 
 export default App

@@ -34,8 +34,11 @@ export type View = {
  * 육안 검산: 월드 (20, 0)은 원점의 오른쪽, (0, 20)은 원점의 위쪽에 찍혀야 한다.
  */
 export function worldToScreen(world: Vec2, view: View): Vec2 {
-  // TODO
-  return { x: 0, y: 0 }
+  
+  const screenX = view.origin.x + view.scale * world.x
+  const screenY = view.origin.y - view.scale * world.y
+
+  return { x: screenX, y: screenY }
 }
 
 /**
@@ -46,6 +49,10 @@ export function worldToScreen(world: Vec2, view: View): Vec2 {
  *       (부동소수 오차 범위 안에서)
  */
 export function screenToWorld(screen: Vec2, view: View): Vec2 {
-  // TODO
-  return { x: 0, y: 0 }
+  
+  const worldX = (screen.x - view.origin.x) / view.scale
+  const worldY = (screen.y - view.origin.y) / -view.scale
+  
+
+  return { x: worldX, y: worldY }
 }

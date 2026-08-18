@@ -11,6 +11,7 @@
  */
 
 import type { View } from './transform'
+import { worldToScreen } from './transform'
 
 export type CanvasSize = { width: number; height: number }
 
@@ -22,8 +23,40 @@ export type CanvasSize = { width: number; height: number }
  */
 export function drawFrame(
   ctx: CanvasRenderingContext2D,
-  size: CanvasSize,
+  _size: CanvasSize,
   view: View,
 ): void {
-  // TODO
+  
+  ctx.strokeStyle = '#2b2f38'
+
+  // 세로선
+  for(let x = -100; x <= 100; x += 10){
+        
+    ctx.beginPath() // 그리기 시작
+
+    // 월드좌표를 스크린좌표로 변환 
+    const startPos = worldToScreen({x, y:-100}, view)
+    const endPos = worldToScreen({x, y:100}, view)
+
+    ctx.moveTo(startPos.x, startPos.y) // 시작점
+    ctx.lineTo(endPos.x, endPos.y)  // 끝점 
+    
+    ctx.stroke() // 실제로 그림
+  }
+
+  // 가로선 
+  for(let y = -100; y <= 100; y += 10){
+        
+    ctx.beginPath() // 그리기 시작
+
+    // 월드좌표를 스크린좌표로 변환
+    const startPos = worldToScreen({x:-100, y}, view)
+    const endPos = worldToScreen({x:100, y}, view)
+
+    ctx.moveTo(startPos.x, startPos.y) // 시작점
+    ctx.lineTo(endPos.x, endPos.y)  // 끝점 
+    
+    ctx.stroke() // 실제로 그림
+  }
+
 }

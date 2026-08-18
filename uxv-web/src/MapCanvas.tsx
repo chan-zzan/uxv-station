@@ -15,15 +15,16 @@ import { drawFrame } from './draw'
 import type { View } from './transform'
 
 type Props = {
-  view: View
+  /** 화면 확대율 — 1미터가 몇 px인가. 원점은 여기서 캔버스 중앙으로 잡는다 */
+  scale: number
 }
 
-export function MapCanvas({ view }: Props) {
+export function MapCanvas({ scale }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // 렌더 루프는 한 번만 만들어 계속 돈다. 그 안에서 최신 view를 읽기 위한 통로.
-  const viewRef = useRef(view)
-  viewRef.current = view
+  // 렌더 루프는 한 번만 만들어 계속 돈다. 그 안에서 최신 scale을 읽기 위한 통로.
+  const scaleRef = useRef(scale)
+  scaleRef.current = scale
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -52,7 +53,15 @@ export function MapCanvas({ view }: Props) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, width, height)
 
-      drawFrame(ctx, { width, height }, viewRef.current)
+      // 월드 원점을 캔버스 한가운데에 둔다.
+      // 캔버스 크기를 아는 곳이 여기뿐이라 view를 여기서 완성한다.
+      // (W4에서 지도 클릭 → screenToWorld 를 할 때도 같은 view가 필요하다)
+      const view: View = {
+        scale: scaleRef.current,
+        origin: { x: width / 2, y: height / 2 },
+      }
+
+      drawFrame(ctx, { width, height }, view)
 
       frameId = requestAnimationFrame(render)
     }
