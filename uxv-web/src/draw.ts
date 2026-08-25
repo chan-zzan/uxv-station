@@ -11,7 +11,7 @@
  */
 
 import type { View } from './transform'
-import { worldToScreen } from './transform'
+import { screenToWorld, worldToScreen } from './transform'
 
 export type CanvasSize = { width: number; height: number }
 
@@ -21,42 +21,65 @@ export type CanvasSize = { width: number; height: number }
  * - ctx의 좌표 단위는 CSS 픽셀이다 (고해상도 보정은 MapCanvas가 이미 끝냈다)
  * - 화면 지우기도 MapCanvas가 이미 했다. 여기서는 그리기만 한다
  */
-export function drawFrame(
-  ctx: CanvasRenderingContext2D,
-  _size: CanvasSize,
-  view: View,
-): void {
+export function drawFrame(ctx: CanvasRenderingContext2D, size: CanvasSize, view: View,): void {
   
+  // 좌표 색깔 설정
   ctx.strokeStyle = '#2b2f38'
 
-  // 세로선
-  for(let x = -100; x <= 100; x += 10){
-        
-    ctx.beginPath() // 그리기 시작
+  // 좌상단, 우하단 좌표를 월드좌표로 변환
+  const topLeft = screenToWorld({x:0, y:0}, view)
+  const bottemRight = screenToWorld({x:size.width, y:size.height}, view)
+  
+  // 각 좌표의 최대/최소값을 10의 배수로 맞춤
+  const minX = Math.ceil(topLeft.x / 10) * 10
+  const maxX = Math.floor(bottemRight.x / 10) * 10
+  const minY = Math.ceil(bottemRight.y / 10) * 10
+  const maxY = Math.floor(topLeft.y / 10) * 10
 
+  ctx.beginPath() // 그리기 시작
+
+  // 세로선
+  for(let x = minX; x <= maxX; x += 10){
+        
     // 월드좌표를 스크린좌표로 변환 
-    const startPos = worldToScreen({x, y:-100}, view)
-    const endPos = worldToScreen({x, y:100}, view)
+    const startPos = worldToScreen({x, y:minY}, view)
+    const endPos = worldToScreen({x, y:maxY}, view)
 
     ctx.moveTo(startPos.x, startPos.y) // 시작점
-    ctx.lineTo(endPos.x, endPos.y)  // 끝점 
-    
-    ctx.stroke() // 실제로 그림
+    ctx.lineTo(endPos.x, endPos.y)  // 끝점     
   }
 
   // 가로선 
-  for(let y = -100; y <= 100; y += 10){
+  for(let y = minY; y <= maxY; y += 10){
         
-    ctx.beginPath() // 그리기 시작
-
     // 월드좌표를 스크린좌표로 변환
-    const startPos = worldToScreen({x:-100, y}, view)
-    const endPos = worldToScreen({x:100, y}, view)
+    const startPos = worldToScreen({x:minX, y}, view)
+    const endPos = worldToScreen({x:maxX, y}, view)
 
     ctx.moveTo(startPos.x, startPos.y) // 시작점
     ctx.lineTo(endPos.x, endPos.y)  // 끝점 
-    
-    ctx.stroke() // 실제로 그림
   }
+    
+  ctx.stroke() // 실제로 그림
 
+  // 축 색깔 설정 
+  ctx.strokeStyle = '#1daf31'
+
+  ctx.beginPath() // 그리기 시작
+
+  // x축  
+  const startPosX = worldToScreen({x:minX, y:0}, view)
+  const endPosX = worldToScreen({x:maxX, y:0}, view)
+
+  ctx.moveTo(startPosX.x, startPosX.y) // 시작점
+  ctx.lineTo(endPosX.x, endPosX.y)  // 끝점 
+  
+  // y축
+  const startPosY = worldToScreen({x:0, y:minY}, view)
+  const endPosY = worldToScreen({x:0, y:maxY}, view)
+
+  ctx.moveTo(startPosY.x, startPosY.y) // 시작점
+  ctx.lineTo(endPosY.x, endPosY.y)  // 끝점
+  
+  ctx.stroke() // 실제로 그림
 }
