@@ -10,6 +10,7 @@
  * (매개변수 "사용되지 않음" 경고는 구현을 채우면 사라진다 — transform.ts 주석 참고)
  */
 
+import type { VehicleState } from './contract'
 import type { View } from './transform'
 import { screenToWorld, worldToScreen } from './transform'
 
@@ -21,7 +22,7 @@ export type CanvasSize = { width: number; height: number }
  * - ctx의 좌표 단위는 CSS 픽셀이다 (고해상도 보정은 MapCanvas가 이미 끝냈다)
  * - 화면 지우기도 MapCanvas가 이미 했다. 여기서는 그리기만 한다
  */
-export function drawFrame(ctx: CanvasRenderingContext2D, size: CanvasSize, view: View,): void {
+export function drawFrame(ctx: CanvasRenderingContext2D, size: CanvasSize, view: View, state: VehicleState,): void {
   
   // 좌표 색깔 설정
   ctx.strokeStyle = '#2b2f38'
@@ -81,5 +82,33 @@ export function drawFrame(ctx: CanvasRenderingContext2D, size: CanvasSize, view:
   ctx.moveTo(startPosY.x, startPosY.y) // 시작점
   ctx.lineTo(endPosY.x, endPosY.y)  // 끝점
   
+  ctx.stroke() // 실제로 그림
+
+
+  // 채우기 색깔 설정 
+  ctx.fillStyle = '#1518e6'
+
+  ctx.beginPath() // 그리기 시작
+
+  // 차량 위치
+  const vehiclePos = worldToScreen({x:state.position.x, y:state.position.y}, view)
+
+  ctx.arc(vehiclePos.x, vehiclePos.y, 1.5 * view.scale, 0, 2 * Math.PI)   // 전부 화면 좌표(px)
+
+  ctx.fill() // 채우기 
+
+  // 선 색깔 설정 
+  ctx.strokeStyle ='#ee1111'
+
+  ctx.beginPath() // 그리기 시작
+
+  // 차량 앞 점 위치
+  const frontPointX = state.position.x + 4 * Math.cos(state.attitude.yaw)
+  const frontPointY = state.position.y + 4 * Math.sin(state.attitude.yaw)
+  const frontPointToScreen = worldToScreen({x:frontPointX, y:frontPointY}, view)
+
+  ctx.moveTo(vehiclePos.x, vehiclePos.y)
+  ctx.lineTo(frontPointToScreen.x, frontPointToScreen.y)
+
   ctx.stroke() // 실제로 그림
 }

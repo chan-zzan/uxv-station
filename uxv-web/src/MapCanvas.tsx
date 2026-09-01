@@ -12,6 +12,7 @@
 
 import { useEffect, useRef } from 'react'
 import { drawFrame } from './draw'
+import { makeState } from './fakeVehicle'
 import type { View } from './transform'
 
 type Props = {
@@ -34,6 +35,12 @@ export function MapCanvas({ scale }: Props) {
     if (!ctx) return
 
     let frameId = 0
+
+    // 시계 두 개. stub.py 의 time.time() / time.monotonic() 과 같은 구조다.
+    //   startTime  Unix 시각  — 계약의 timestamp 를 만들 때만 쓴다
+    //   startPerf  단조 시계  — 경과 시간(t) 측정용. 시스템 시계가 바뀌어도 안 흔들린다
+    const startTime = Date.now() / 1000
+    const startPerf = performance.now()
 
     const render = () => {
       const dpr = window.devicePixelRatio || 1
@@ -61,7 +68,12 @@ export function MapCanvas({ scale }: Props) {
         origin: { x: width / 2, y: height / 2 },
       }
 
-      drawFrame(ctx, { width, height }, view)
+      // 가짜 차량 상태. W3에서 이 줄이 WebSocket 수신으로 바뀌고,
+      // 아래 drawFrame 호출은 그대로 남는다.
+      const t = (performance.now() - startPerf) / 1000
+      const state = makeState(t, startTime)
+
+      drawFrame(ctx, { width, height }, view, state)
 
       frameId = requestAnimationFrame(render)
     }
